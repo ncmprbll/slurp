@@ -15,5 +15,17 @@ fn main() {
         exit(1);
     };
 
+    let re = regex::Regex::new(r#"(?s)href="\/matches\/\d+?">(.+?)<.+?data-time-ago="(\d+?)".+?((?:R\d{1,3}|Round \?) · \d\d:\d\d\.\d\d).+?data-report-message-content="(.*?)""#).unwrap();
+
+    for capture in re.captures_iter(&data) {
+        println!(
+            "{:?} {:?} {:?} {:?}",
+            capture.get(1),
+            capture.get(2),
+            capture.get(3),
+            capture.get(4)
+        );
+    }
+
     println!("First line:\n{:?}", data.lines().next());
 }
