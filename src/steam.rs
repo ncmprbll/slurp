@@ -3,7 +3,7 @@ use std::str::FromStr;
 const STEAM_UNIVERSE: &str = "STEAM_";
 const STEAM_BASE_ID: u64 = 76561197960265728;
 
-pub struct SteamId(u64);
+pub struct SteamId(pub u64);
 
 impl SteamId {
     fn from_32(s: &str) -> Option<Self> {
