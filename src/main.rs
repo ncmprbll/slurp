@@ -77,9 +77,54 @@ fn main() {
             date: match_date,
         };
 
+        let round_and_offset = round_and_offset.split(" · ").collect::<Vec<&str>>();
+
+        if round_and_offset.len() != 2 {
+            continue;
+        }
+
+        let round = round_and_offset[0];
+        let offset = round_and_offset[1];
+
+        let round = match round {
+            "Round ?" => Round::Unknown,
+            other => match other[1..].parse::<u8>() {
+                Ok(v) => Round::Number(v),
+                Err(_) => continue,
+            },
+        };
+
+        let instants = offset
+            .split(":")
+            .flat_map(|instant| {
+                return instant.split(".");
+            })
+            .collect::<Vec<&str>>();
+
+        if instants.len() != 3 {
+            continue;
+        }
+
+        let minutes_ms = match instants[0].parse::<i64>() {
+            Ok(v) => v * 60000,
+            Err(_) => continue,
+        };
+
+        let seconds_ms = match instants[1].parse::<i64>() {
+            Ok(v) => v * 1000,
+            Err(_) => continue,
+        };
+
+        let milliseconds = match instants[2].parse::<i64>() {
+            Ok(v) => v * 10,
+            Err(_) => continue,
+        };
+
+        let offset = chrono::Duration::milliseconds(minutes_ms + seconds_ms + milliseconds);
+
         let message = Message {
-            round: Round::Unknown,
-            date: match_date,
+            round: round,
+            date: match_date + offset,
             content: message.to_string(),
         };
 
