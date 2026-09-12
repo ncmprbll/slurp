@@ -1,3 +1,5 @@
+mod steam;
+
 use chrono::{DateTime, Utc};
 use std::{fs, io::Read, process::exit};
 
