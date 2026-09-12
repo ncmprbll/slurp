@@ -1,7 +1,27 @@
-use std::{fs, io::Read, process::exit};
+use chrono::{DateTime, Utc};
+use std::{fs, io::Read, process::exit, time};
 
 const BUFFER_SIZE: u64 = 1 << 14;
 const REGEX: &str = r#"(?s)href="\/matches\/\d+?">(.+?)<.+?data-time-ago="(\d+?)".+?((?:R\d{1,3}|Round \?) · \d\d:\d\d\.\d\d).+?data-report-message-content="(.*?)""#;
+
+#[derive(Debug)]
+struct Match {
+    map: String,
+    date: DateTime<Utc>,
+}
+
+#[derive(Debug)]
+enum Round {
+    Unknown,
+    Number(u8),
+}
+
+#[derive(Debug)]
+struct Message {
+    round: Round,
+    date: DateTime<Utc>,
+    content: String,
+}
 
 fn main() {
     let file = fs::File::open("reference.html").unwrap_or_else(|err| {
@@ -22,15 +42,51 @@ fn main() {
     });
 
     for capture in re.captures_iter(&data) {
-        let map = capture.get(1).unwrap();
-        let match_date = capture.get(2).unwrap();
-        let round_and_offset = capture.get(3).unwrap();
-        let message = capture.get(4).unwrap();
+        let map = match capture.get(1) {
+            Some(v) => v.as_str(),
+            None => continue,
+        };
 
-        println!(
-            "{:?} {:?} {:?} {:?}",
-            map, match_date, round_and_offset, message
-        );
+        let match_date = match capture.get(2) {
+            Some(v) => v.as_str(),
+            None => continue,
+        };
+
+        let round_and_offset = match capture.get(3) {
+            Some(v) => v.as_str(),
+            None => continue,
+        };
+
+        let message = match capture.get(4) {
+            Some(v) => v.as_str(),
+            None => continue,
+        };
+
+        let match_date = match match_date.parse() {
+            Ok(v) => v,
+            Err(_) => continue,
+        };
+
+        let match_date = match DateTime::from_timestamp(match_date, 0) {
+            Some(v) => v,
+            None => continue,
+        };
+
+        let m = Match {
+            map: map.to_string(),
+            date: match_date,
+        };
+
+        let message = Message {
+            round: Round::Unknown,
+            date: match_date,
+            content: message.to_string(),
+        };
+
+        println!("{:?} {:?} {:?}", map, match_date, round_and_offset);
+
+        println!("{:?}", m);
+        println!("{:?}", message);
     }
 
     println!("First line:\n{:?}", data.lines().next());
