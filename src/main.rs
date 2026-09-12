@@ -1,7 +1,7 @@
 mod steam;
 
 use chrono::{DateTime, Utc};
-use std::{fs, io::Read, process::exit};
+use std::{fmt::Display, fs, io::Read, process::exit};
 
 const BUFFER_SIZE: u64 = 1 << 18;
 const MATCH_SECTION_REGEX: &str =
@@ -13,12 +13,26 @@ const MATCH_MESSAGE_REGEX: &str =
 struct Match {
     map: String,
     date: DateTime<Utc>,
+    messages: Vec<Message>,
 }
 
 #[derive(Debug)]
 enum Round {
     Unknown,
     Number(u8),
+}
+
+impl Display for Round {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                Round::Unknown => "??".to_string(),
+                Round::Number(n) => format!("{:0>2}", n),
+            }
+        )
+    }
 }
 
 #[derive(Debug)]
@@ -50,6 +64,8 @@ fn main() {
         eprintln!("message regex failed: {err}");
         exit(1);
     });
+
+    let mut matches: Vec<Match> = Vec::new();
 
     for capture in match_section_re.captures_iter(&data) {
         let section = match capture.get(0) {
@@ -92,9 +108,10 @@ fn main() {
             }
         };
 
-        let m = Match {
+        let mut m = Match {
             map: map.to_string(),
             date: match_date,
+            messages: Vec::new(),
         };
 
         for capture in match_message_re.captures_iter(&section) {
@@ -171,16 +188,29 @@ fn main() {
 
             let offset = chrono::Duration::milliseconds(minutes_ms + seconds_ms + centiseconds_ms);
 
-            let message = Message {
+            m.messages.push(Message {
                 round: round,
                 date: match_date + offset,
                 content: message.to_string(),
-            };
+            });
+        }
 
+        matches.push(m);
+    }
+
+    for m in matches {
+        println!(
+            "| {} at {}",
+            m.map,
+            format!("{}", m.date.format("%Y-%m-%d %H:%M:%S"))
+        );
+        for message in m.messages {
             println!(
-                "Map: {} (played at {}), at {} they said: {}",
-                map, match_date, message.date, message.content
-            );
+                "* R{} at {}: {}",
+                message.round,
+                format!("{}", message.date.format("%H:%M:%S")),
+                message.content
+            )
         }
     }
 }
