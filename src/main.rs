@@ -1,7 +1,7 @@
 mod steam;
 
 use chrono::{DateTime, Utc};
-use std::{fmt::Display, fs, io::Read, process::exit};
+use std::{env, fmt::Display, fs, io::Read, process::exit};
 
 const BUFFER_SIZE: u64 = 1 << 18;
 const MATCH_SECTION_REGEX: &str =
@@ -43,6 +43,21 @@ struct Message {
 }
 
 fn main() {
+    let mut args: Vec<String> = env::args().collect();
+
+    if args.len() < 2 {
+        return;
+    }
+
+    let steam_id = args.swap_remove(1);
+    let steam_id = match steam_id.parse::<steam::SteamId>() {
+        Ok(v) => v,
+        Err(err) => {
+            eprintln!("{err}");
+            exit(1)
+        }
+    };
+
     let file = fs::File::open("reference.html").unwrap_or_else(|err| {
         eprintln!("Failed to open the file: {err}");
         exit(1);
@@ -204,6 +219,7 @@ fn main() {
             m.map,
             format!("{}", m.date.format("%Y-%m-%d %H:%M:%S"))
         );
+
         for message in m.messages {
             println!(
                 "* R{} at {}: {}",
