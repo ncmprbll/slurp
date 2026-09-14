@@ -1,16 +1,25 @@
 mod cstracker;
 mod steam;
 
+use clap::Parser;
 use std::{env, process::exit};
 
+#[derive(Parser, Debug)]
+#[command(version, about, long_about = None)]
+struct Args {
+    /// Target SteamID
+    #[arg(short, long, required = true)]
+    target: String,
+
+    /// User agent for a web request
+    #[arg(short, long)]
+    user_agent: Option<String>,
+}
+
 fn main() {
-    let mut args: Vec<String> = env::args().collect();
+    let args = Args::parse();
 
-    if args.len() < 2 {
-        return;
-    }
-
-    let steam_id = args.swap_remove(1);
+    let steam_id = args.target;
     let steam_id = match steam_id.parse::<steam::SteamId>() {
         Ok(v) => v,
         Err(err) => {
@@ -19,10 +28,11 @@ fn main() {
         }
     };
 
-    let chat_history = cstracker::get_match_history(steam_id.0, None).unwrap_or_else(|err| {
-        eprintln!("failed to get the chat history: {err}");
-        exit(1)
-    });
+    let chat_history = cstracker::get_match_history(steam_id.0, args.user_agent.as_deref())
+        .unwrap_or_else(|err| {
+            eprintln!("failed to get the chat history: {err}");
+            exit(1)
+        });
 
     let matches = cstracker::parse_match_history(&chat_history).unwrap_or_else(|err| {
         eprintln!("failed to parse chat history: {err}");
