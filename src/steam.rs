@@ -58,10 +58,18 @@ mod tests {
     }
 
     #[test]
-    fn test_simple_insensitive_parsing_from_steamid64() {
+    fn test_simple_insensitive_parsing_from_steamid32() {
         assert_eq!(
             "steAm_0:1:3645504".parse::<SteamId>().unwrap().0,
             76561197967556737
+        )
+    }
+
+    #[test]
+    fn test_another_insensitive_parsing_with_bit_flip_from_steamid32() {
+        assert_eq!(
+            "stEam_0:0:3645504".parse::<SteamId>().unwrap().0,
+            76561197967556736
         )
     }
 
