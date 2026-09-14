@@ -39,6 +39,11 @@ fn main() {
         exit(1)
     });
 
+    if matches.len() == 0 {
+        eprintln!("no matches found");
+        exit(1)
+    }
+
     for m in matches {
         println!(
             "| {} at {}",

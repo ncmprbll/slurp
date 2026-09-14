@@ -21,7 +21,6 @@ impl fmt::Display for MatchRequestError {
     }
 }
 
-// Implement From<reqwest::Error> to allow automatic conversion with the ? operator
 impl From<reqwest::Error> for MatchRequestError {
     fn from(err: reqwest::Error) -> Self {
         MatchRequestError::Http(err)
