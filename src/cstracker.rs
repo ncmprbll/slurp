@@ -1,11 +1,32 @@
 use chrono::{DateTime, Utc};
-use reqwest::Result;
-use std::fmt::Display;
+use std::fmt::{self, Debug, Display};
 
 const MATCH_SECTION_REGEX: &str =
     r#"(?s)<section.+?href="\/matches\/\d+?">(.+?)<.+?data-time-ago="(\d+?)".+?<\/section>"#;
 const MATCH_MESSAGE_REGEX: &str =
     r#"(?s)((?:R\d{1,3}|Round \?) · \d\d:\d\d\.\d\d).+?data-report-message-content="(.*?)""#;
+
+#[derive(Debug)]
+pub enum MatchRequestError {
+    Http(reqwest::Error),
+    Other(&'static str),
+}
+
+impl fmt::Display for MatchRequestError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            MatchRequestError::Http(e) => write!(f, "{}", e),
+            MatchRequestError::Other(s) => write!(f, "{}", s),
+        }
+    }
+}
+
+// Implement From<reqwest::Error> to allow automatic conversion with the ? operator
+impl From<reqwest::Error> for MatchRequestError {
+    fn from(err: reqwest::Error) -> Self {
+        MatchRequestError::Http(err)
+    }
+}
 
 #[derive(Debug)]
 pub struct Match {
@@ -40,18 +61,29 @@ pub struct Message {
     pub content: String,
 }
 
-pub fn get_match_history(steam_id: u64, user_agent: Option<&str>) -> Result<String> {
+pub fn get_match_history(
+    steam_id: u64,
+    user_agent: Option<&str>,
+) -> Result<String, MatchRequestError> {
     let client = reqwest::blocking::Client::builder()
         .user_agent(user_agent.unwrap_or("PostmanRuntime/7.56.1")) // They're okay with Postman's user agent
         .build()?;
 
-    client
+    let text = client
         .get(format!(
             "https://cstracker.gg/players/{}/sections/chat",
             steam_id
         ))
         .send()?
-        .text()
+        .text()?;
+
+    if text.contains("Just a moment...") {
+        return Err(MatchRequestError::Other(
+            "hit by Cloudflare (try changing user agent or manually accessing cstracker.gg in the browser to whitelist your ip)",
+        ));
+    }
+
+    Ok(text)
 }
 
 pub fn parse_match_history(

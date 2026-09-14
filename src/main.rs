@@ -2,7 +2,7 @@ mod cstracker;
 mod steam;
 
 use clap::Parser;
-use std::{env, process::exit};
+use std::process::exit;
 
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
