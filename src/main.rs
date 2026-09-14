@@ -19,7 +19,7 @@ fn main() {
         }
     };
 
-    let chat_history = cstracker::get_match_history(steam_id.0).unwrap_or_else(|err| {
+    let chat_history = cstracker::get_match_history(steam_id.0, None).unwrap_or_else(|err| {
         eprintln!("failed to get the chat history: {err}");
         exit(1)
     });

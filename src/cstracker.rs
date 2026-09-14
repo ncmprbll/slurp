@@ -40,9 +40,9 @@ pub struct Message {
     pub content: String,
 }
 
-pub fn get_match_history(steam_id: u64) -> Result<String> {
+pub fn get_match_history(steam_id: u64, user_agent: Option<&str>) -> Result<String> {
     let client = reqwest::blocking::Client::builder()
-        .user_agent("PostmanRuntime/7.56.1")
+        .user_agent(user_agent.unwrap_or("PostmanRuntime/7.56.1")) // They're okay with Postman's user agent
         .build()?;
 
     client
